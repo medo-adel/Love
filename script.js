@@ -8,16 +8,16 @@
 const state = {
   mode: 'love', // 'love' | 'friends'
   person1Name: 'محمد',
-  person2Name: 'أميرتي',
+  person2Name: 'نور',
   anniversaryDate: '',
   loveNickname: 'نصفي الثاني وروح قلبي',
   loveLetter: '',
   theme: 'theme-rose',
   musicType: 'piano',
   customAudioUrl: null,
-  boyPhotos: [],      // Array of base64 data URLs
-  girlPhotos: [],     // Array of base64 data URLs
-  togetherPhotos: [], // Array of base64 data URLs
+  boyPhotos: ['images/boy.jpg'],      // Default to repo images
+  girlPhotos: ['images/girl.jpg', 'images/girl2.jpg', 'images/girl3.jpg', 'images/girl4.jpg'], // Default to repo images
+  togetherPhotos: [], 
   counterInterval: null,
   isAudioPlaying: false
 };
@@ -76,10 +76,9 @@ const reasonsData = {
 
 let currentReasonIndex = 0;
 
-// Default SVG Placeholders
-const defaultBoyPlaceholder = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%233a86ff"/><stop offset="100%" stop-color="%2300f2fe"/></linearGradient></defs><rect width="400" height="400" fill="url(%23bg)"/><circle cx="200" cy="150" r="70" fill="%23ffffff" opacity="0.9"/><path d="M100,340 C100,240 300,240 300,340 Z" fill="%23ffffff" opacity="0.9"/><text x="200" y="380" font-family="sans-serif" font-size="24" fill="%23ffffff" text-anchor="middle">هو / أنت 👊</text></svg>`;
-
-const defaultGirlPlaceholder = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400"><defs><linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%23ff007f"/><stop offset="100%" stop-color="%23ffd166"/></linearGradient></defs><rect width="400" height="400" fill="url(%23bg2)"/><circle cx="200" cy="150" r="70" fill="%23ffffff" opacity="0.9"/><path d="M100,340 C100,240 300,240 300,340 Z" fill="%23ffffff" opacity="0.9"/><text x="200" y="380" font-family="sans-serif" font-size="24" fill="%23ffffff" text-anchor="middle">هي / الصاحب 💖</text></svg>`;
+// Default Placeholders (pointing to repo real images)
+const defaultBoyPlaceholder = 'images/boy.jpg';
+const defaultGirlPlaceholder = 'images/girl.jpg';
 
 
 // ==========================================================================
@@ -89,6 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initParticleCanvas();
   setupUploadZones();
   setupEventListeners();
+
+  // Render initial photo previews
+  renderPreviews(state.boyPhotos, document.getElementById('boyPreviews'));
+  renderPreviews(state.girlPhotos, document.getElementById('girlPreviews'));
 
   // Check URL parameters for direct share link
   const loadedFromUrl = checkUrlParams();
@@ -131,7 +134,7 @@ window.setMode = function(newMode) {
     document.getElementById('person1Name').placeholder = 'مثال: محمد، أحمد، فادي...';
     document.getElementById('labelPerson2').innerHTML = '<i class="fa-solid fa-venus"></i> اسم البنت (حبيبتك وأميرتك)';
     document.getElementById('person2Name').placeholder = 'مثال: سارة، نور، مريم...';
-    document.getElementById('person2Name').value = state.person2Name === 'أحمد (صاحبي الجدع)' ? 'أميرتي' : (state.person2Name || 'أميرتي');
+    document.getElementById('person2Name').value = state.person2Name === 'أحمد (صاحبي الجدع)' ? 'نور' : (state.person2Name || 'نور');
     document.getElementById('labelDate').innerHTML = '<i class="fa-solid fa-calendar-heart"></i> تاريخ بداية حكايتكم أو أول لقاء';
     document.getElementById('helperDate').textContent = 'هيتم حساب عداد حب مباشر بالثواني والدقائق والأيام!';
     document.getElementById('labelNickname').innerHTML = '<i class="fa-solid fa-quote-right"></i> لقبها المفضل أو جملة خاصة بيكم';
