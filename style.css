@@ -253,6 +253,33 @@ body {
   margin-top: 20px;
 }
 
+.saved-projects-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--card-border);
+  padding: 8px 18px;
+  border-radius: 30px;
+  margin-top: 15px;
+  font-size: 0.9rem;
+}
+
+.saved-projects-bar i {
+  color: var(--accent-gold);
+}
+
+.saved-projects-bar select {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-family: var(--font-arabic);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 .demo-fill-btn {
   background: rgba(255, 255, 255, 0.08);
   border: 1px dashed var(--accent-gold);

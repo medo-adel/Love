@@ -7,6 +7,7 @@
 // --- Global State ---
 const state = {
   mode: 'love', // 'love' | 'friends'
+  currentProjectId: null,
   person1Name: 'محمد',
   person2Name: 'نور',
   anniversaryDate: '',
@@ -15,8 +16,8 @@ const state = {
   theme: 'theme-rose',
   musicType: 'piano',
   customAudioUrl: null,
-  boyPhotos: ['images/boy.jpg'],      // Default to repo images
-  girlPhotos: ['images/girl.jpg', 'images/girl2.jpg', 'images/girl3.jpg', 'images/girl4.jpg'], // Default to repo images
+  boyPhotos: [],      
+  girlPhotos: [], 
   togetherPhotos: [], 
   counterInterval: null,
   isAudioPlaying: false
@@ -88,12 +89,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initParticleCanvas();
   setupUploadZones();
   setupEventListeners();
+  loadSavedProjectsList();
 
   // Render initial photo previews
   renderPreviews(state.boyPhotos, document.getElementById('boyPreviews'));
   renderPreviews(state.girlPhotos, document.getElementById('girlPreviews'));
 
-  // Check URL parameters for direct share link
+  // Check URL parameters for direct share link (?id=project_1 or query params)
   const loadedFromUrl = checkUrlParams();
 
   if (!loadedFromUrl) {
@@ -103,6 +105,32 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('anniversaryDate').value = defaultDate.toISOString().split('T')[0];
   }
 });
+
+// Load saved projects list if server is running
+function loadSavedProjectsList() {
+  fetch('/api/projects')
+    .then(r => r.json())
+    .then(projects => {
+      if (Array.isArray(projects) && projects.length > 0) {
+        const bar = document.getElementById('savedProjectsBar');
+        const select = document.getElementById('savedProjectsSelect');
+        select.innerHTML = '<option value="">اختر مشروعاً لمعاينته...</option>';
+        projects.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.id} (${p.p1 || 'هو'} & ${p.p2 || 'هي'})`;
+          select.appendChild(opt);
+        });
+        bar.style.display = 'inline-flex';
+      }
+    })
+    .catch(() => {});
+}
+
+window.openProjectFromDropdown = function(projectId) {
+  if (!projectId) return;
+  fetchProjectById(projectId);
+};
 
 
 // ==========================================================================
@@ -504,7 +532,7 @@ function loadDemoData() {
 // ==========================================================================
 function handleExtract() {
   state.person1Name = document.getElementById('person1Name').value.trim() || 'محمد';
-  state.person2Name = document.getElementById('person2Name').value.trim() || (state.mode === 'love' ? 'أميرتي' : 'أحمد');
+  state.person2Name = document.getElementById('person2Name').value.trim() || (state.mode === 'love' ? 'نور' : 'أحمد');
   state.anniversaryDate = document.getElementById('anniversaryDate').value;
   state.loveNickname = document.getElementById('loveNickname').value.trim() || (state.mode === 'love' ? 'نصفي الثاني وروح قلبي' : 'أخويا وسندي');
   state.loveLetter = document.getElementById('loveLetterText').value.trim() || (state.mode === 'love' ? letterPresets.love_1 : letterPresets.friends_1);
@@ -522,6 +550,36 @@ function handleExtract() {
   }
 
   document.body.className = state.theme;
+
+  // Save Project to images/project_X on Server if running
+  const customProjectId = document.getElementById('projectIdInput') ? document.getElementById('projectIdInput').value.trim() : '';
+  if (window.location.protocol.startsWith('http')) {
+    fetch('/api/save-project', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectId: customProjectId,
+        mode: state.mode,
+        person1Name: state.person1Name,
+        person2Name: state.person2Name,
+        anniversaryDate: state.anniversaryDate,
+        loveNickname: state.loveNickname,
+        loveLetter: state.loveLetter,
+        theme: state.theme,
+        boyPhotos: state.boyPhotos,
+        girlPhotos: state.girlPhotos,
+        togetherPhotos: state.togetherPhotos
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        state.currentProjectId = res.projectId;
+        console.log('Project saved to folder:', res.projectId, res.gitStatus);
+      }
+    })
+    .catch(() => {});
+  }
 
   playMagicalChime();
   triggerHeartShower();
@@ -1041,28 +1099,33 @@ window.openShareModal = function() {
     ? (window.location.origin + window.location.pathname) 
     : ghPagesBase;
 
-  // Encode state into query params
-  const params = new URLSearchParams();
-  params.set('mode', state.mode);
-  params.set('p1', state.person1Name);
-  params.set('p2', state.person2Name);
-  params.set('date', state.anniversaryDate || '');
-  params.set('nick', state.loveNickname);
-  params.set('theme', state.theme);
-  params.set('msg', state.loveLetter);
+  let fullShareUrl = '';
+  if (state.currentProjectId) {
+    fullShareUrl = `${currentBase}?id=${state.currentProjectId}`;
+  } else {
+    // Encode state into query params
+    const params = new URLSearchParams();
+    params.set('mode', state.mode);
+    params.set('p1', state.person1Name);
+    params.set('p2', state.person2Name);
+    params.set('date', state.anniversaryDate || '');
+    params.set('nick', state.loveNickname);
+    params.set('theme', state.theme);
+    params.set('msg', state.loveLetter);
 
-  // If photos have web URLs or images/ paths, include them!
-  const boyImg = state.boyPhotos.find(p => p.startsWith('http') || p.startsWith('images/')) 
-    || (document.getElementById('boyUrlInput') ? document.getElementById('boyUrlInput').value.trim() : '');
-  const girlImg = state.girlPhotos.find(p => p.startsWith('http') || p.startsWith('images/')) 
-    || (document.getElementById('girlUrlInput') ? document.getElementById('girlUrlInput').value.trim() : '');
+    // If photos have web URLs or images/ paths, include them!
+    const boyImg = state.boyPhotos.find(p => p.startsWith('http') || p.startsWith('images/')) 
+      || (document.getElementById('boyUrlInput') ? document.getElementById('boyUrlInput').value.trim() : '');
+    const girlImg = state.girlPhotos.find(p => p.startsWith('http') || p.startsWith('images/')) 
+      || (document.getElementById('girlUrlInput') ? document.getElementById('girlUrlInput').value.trim() : '');
 
-  if (boyImg) params.set('bimg', boyImg);
-  if (girlImg) params.set('gimg', girlImg);
+    if (boyImg) params.set('bimg', boyImg);
+    if (girlImg) params.set('gimg', girlImg);
 
-  const fullShareUrl = `${currentBase}?${params.toString()}`;
+    fullShareUrl = `${currentBase}?${params.toString()}`;
+  }
+
   input.value = fullShareUrl;
-
   modal.classList.add('active');
 };
 
@@ -1094,16 +1157,61 @@ window.shareOnTelegram = function() {
   window.open(`https://t.me/share/url?url=${encodeURIComponent(input.value)}&text=${encodeURIComponent(title)}`, '_blank');
 };
 
-// Check if user came from a shared URL link
+// Fetch Project by ID from images/<id>/data.json
+function fetchProjectById(projectId) {
+  fetch(`images/${projectId}/data.json`)
+    .then(res => {
+      if (!res.ok) throw new Error('Not found');
+      return res.json();
+    })
+    .then(data => {
+      state.currentProjectId = projectId;
+      state.mode = data.mode || 'love';
+      setMode(state.mode);
+
+      state.person1Name = data.person1Name || 'محمد';
+      state.person2Name = data.person2Name || 'نور';
+      state.anniversaryDate = data.anniversaryDate || '';
+      state.loveNickname = data.loveNickname || '';
+      state.loveLetter = data.loveLetter || '';
+      state.theme = data.theme || 'theme-rose';
+
+      state.boyPhotos = data.boyPhotos || [];
+      state.girlPhotos = data.girlPhotos || [];
+      state.togetherPhotos = data.togetherPhotos || [];
+
+      document.body.className = state.theme;
+
+      populateRomanticExperience();
+      document.getElementById('creatorStudio').classList.remove('active-view');
+      document.getElementById('romanticExperience').classList.add('active-view');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      startRomanticMusic();
+    })
+    .catch(err => {
+      console.warn('Could not load project', projectId, err);
+    });
+}
+
+// Check if user came from a shared URL link (?id=project_1 or query params)
 function checkUrlParams() {
   const urlParams = new URLSearchParams(window.location.search);
+
+  // 1. Direct Project ID: ?id=project_1
+  if (urlParams.has('id')) {
+    const pid = urlParams.get('id');
+    fetchProjectById(pid);
+    return true;
+  }
+
+  // 2. Query String params
   if (!urlParams.has('p1') && !urlParams.has('p2')) return false;
 
   const mode = urlParams.get('mode') || 'love';
   setMode(mode);
 
   state.person1Name = urlParams.get('p1') || (mode === 'love' ? 'محمد' : 'محمد');
-  state.person2Name = urlParams.get('p2') || (mode === 'love' ? 'أميرتي' : 'أحمد');
+  state.person2Name = urlParams.get('p2') || (mode === 'love' ? 'نور' : 'أحمد');
   state.anniversaryDate = urlParams.get('date') || '';
   state.loveNickname = urlParams.get('nick') || '';
   state.theme = urlParams.get('theme') || (mode === 'love' ? 'theme-rose' : 'theme-friends-cyan');

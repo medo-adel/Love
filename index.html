@@ -60,6 +60,15 @@
             <span id="demoBtnText">تجربة فورية بنموذج رومانسي تجريبي ✨</span>
           </button>
         </div>
+
+        <!-- Saved Projects Bar -->
+        <div class="saved-projects-bar" id="savedProjectsBar" style="display: none;">
+          <i class="fa-solid fa-folder-open"></i>
+          <span>مشاريعك السابقة:</span>
+          <select id="savedProjectsSelect" onchange="openProjectFromDropdown(this.value)">
+            <option value="">اختر مشروعاً لمعاينته...</option>
+          </select>
+        </div>
       </header>
 
       <!-- Main Form Card -->
@@ -92,6 +101,12 @@
             <div class="form-group">
               <label for="loveNickname" id="labelNickname"><i class="fa-solid fa-quote-right"></i> لقبها المفضل أو جملة خاصة بيكم</label>
               <input type="text" id="loveNickname" placeholder="مثال: قمري، وتيني، أخويا وسندي..." value="نصفي الثاني وروح قلبي">
+            </div>
+
+            <div class="form-group">
+              <label for="projectIdInput"><i class="fa-solid fa-folder-closed"></i> مجلد المشروع (Project ID)</label>
+              <input type="text" id="projectIdInput" placeholder="تلقائي: project_1, project_2...">
+              <small class="helper-text">الصور هتتحفظ داخل images/project_X ورابطها الدائم ?id=project_X</small>
             </div>
           </div>
         </section>
