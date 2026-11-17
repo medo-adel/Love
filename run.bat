@@ -1,9 +1,9 @@
 @echo off
-title LoveStory Maker Server
+title LoveStory Maker Server (Flask + SQLite)
 echo ====================================================
-echo        LoveStory Maker - مشغل السيرفر المحلي
+echo    LoveStory Maker - مشغل السيرفر وقاعدة البيانات SQLite
 echo ====================================================
-echo يتم تشغيل السيرفر الآن على المنفذ 8000...
+echo جاري تشغيل السيرفر وقاعدة البيانات على http://localhost:5000 ...
 echo.
-python server.py
+python app.py
 pause

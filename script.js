@@ -110,15 +110,17 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadSavedProjectsList() {
   fetch('/api/projects')
     .then(r => r.json())
-    .then(projects => {
-      if (Array.isArray(projects) && projects.length > 0) {
+    .then(data => {
+      const list = data.projects || (Array.isArray(data) ? data : []);
+      if (Array.isArray(list) && list.length > 0) {
         const bar = document.getElementById('savedProjectsBar');
         const select = document.getElementById('savedProjectsSelect');
         select.innerHTML = '<option value="">اختر مشروعاً لمعاينته...</option>';
-        projects.forEach(p => {
+        list.forEach(p => {
           const opt = document.createElement('option');
-          opt.value = p.id;
-          opt.textContent = `${p.id} (${p.p1 || 'هو'} & ${p.p2 || 'هي'})`;
+          const slug = p.slug || p.id;
+          opt.value = slug;
+          opt.textContent = `${slug} (${p.person1_name || p.p1 || 'هو'} & ${p.person2_name || p.p2 || 'هي'})`;
           select.appendChild(opt);
         });
         bar.style.display = 'inline-flex';
@@ -551,34 +553,41 @@ function handleExtract() {
 
   document.body.className = state.theme;
 
-  // Save Project to images/project_X on Server if running
+  // Save Project to SQLite API on Server if running
   const customProjectId = document.getElementById('projectIdInput') ? document.getElementById('projectIdInput').value.trim() : '';
   if (window.location.protocol.startsWith('http')) {
-    fetch('/api/save-project', {
+    fetch('/api/projects', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        projectId: customProjectId,
+        slug: customProjectId,
         mode: state.mode,
-        person1Name: state.person1Name,
-        person2Name: state.person2Name,
-        anniversaryDate: state.anniversaryDate,
-        loveNickname: state.loveNickname,
-        loveLetter: state.loveLetter,
+        person1_name: state.person1Name,
+        person2_name: state.person2Name,
+        anniversary_date: state.anniversaryDate,
+        nickname: state.loveNickname,
+        letter: state.loveLetter,
         theme: state.theme,
-        boyPhotos: state.boyPhotos,
-        girlPhotos: state.girlPhotos,
-        togetherPhotos: state.togetherPhotos
+        music_type: state.musicType,
+        boy_photos: state.boyPhotos,
+        girl_photos: state.girlPhotos,
+        together_photos: state.togetherPhotos
       })
     })
     .then(r => r.json())
     .then(res => {
       if (res.success) {
-        state.currentProjectId = res.projectId;
-        console.log('Project saved to folder:', res.projectId, res.gitStatus);
+        state.currentProjectId = res.slug;
+        if (res.share_url) {
+          state.shareUrl = res.share_url;
+        }
+        console.log('Project saved to SQLite database successfully:', res.slug);
+        loadSavedProjectsList();
       }
     })
-    .catch(() => {});
+    .catch(err => {
+      console.log('API save skipped or offline', err);
+    });
   }
 
   playMagicalChime();
@@ -1157,54 +1166,80 @@ window.shareOnTelegram = function() {
   window.open(`https://t.me/share/url?url=${encodeURIComponent(input.value)}&text=${encodeURIComponent(title)}`, '_blank');
 };
 
-// Fetch Project by ID from images/<id>/data.json
+// Fetch Project by ID from SQLite API or images/<id>/data.json fallback
 function fetchProjectById(projectId) {
-  fetch(`images/${projectId}/data.json`)
+  // 1. Try SQLite API first
+  fetch(`/api/projects/${projectId}`)
     .then(res => {
-      if (!res.ok) throw new Error('Not found');
+      if (!res.ok) throw new Error('API not available or 404');
       return res.json();
     })
-    .then(data => {
-      state.currentProjectId = projectId;
-      state.mode = data.mode || 'love';
-      setMode(state.mode);
-
-      state.person1Name = data.person1Name || 'محمد';
-      state.person2Name = data.person2Name || 'نور';
-      state.anniversaryDate = data.anniversaryDate || '';
-      state.loveNickname = data.loveNickname || '';
-      state.loveLetter = data.loveLetter || '';
-      state.theme = data.theme || 'theme-rose';
-
-      state.boyPhotos = data.boyPhotos || [];
-      state.girlPhotos = data.girlPhotos || [];
-      state.togetherPhotos = data.togetherPhotos || [];
-
-      document.body.className = state.theme;
-
-      populateRomanticExperience();
-      document.getElementById('creatorStudio').classList.remove('active-view');
-      document.getElementById('romanticExperience').classList.add('active-view');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      startRomanticMusic();
+    .then(res => {
+      if (!res.success || !res.project) throw new Error('Invalid project response');
+      applyProjectData(res.project, projectId);
     })
     .catch(err => {
-      console.warn('Could not load project', projectId, err);
+      // 2. Fallback to static folder images/<id>/data.json
+      fetch(`images/${projectId}/data.json`)
+        .then(res => {
+          if (!res.ok) throw new Error('Static file not found');
+          return res.json();
+        })
+        .then(data => {
+          applyProjectData(data, projectId);
+        })
+        .catch(e => {
+          console.warn('Could not load project', projectId, e);
+        });
     });
 }
 
-// Check if user came from a shared URL link (?id=project_1 or query params)
+function applyProjectData(data, projectId) {
+  state.currentProjectId = projectId;
+  state.mode = data.mode || 'love';
+  setMode(state.mode);
+
+  state.person1Name = data.person1_name || data.person1Name || 'محمد';
+  state.person2Name = data.person2_name || data.person2Name || 'نور';
+  state.anniversaryDate = data.anniversary_date || data.anniversaryDate || '';
+  state.loveNickname = data.nickname || data.loveNickname || '';
+  state.loveLetter = data.letter || data.loveLetter || '';
+  state.theme = data.theme || 'theme-rose';
+
+  state.boyPhotos = data.boy_photos || data.boyPhotos || [];
+  state.girlPhotos = data.girl_photos || data.girlPhotos || [];
+  state.togetherPhotos = data.together_photos || data.togetherPhotos || [];
+
+  document.body.className = state.theme;
+
+  populateRomanticExperience();
+  document.getElementById('creatorStudio').classList.remove('active-view');
+  document.getElementById('romanticExperience').classList.add('active-view');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  startRomanticMusic();
+}
+
+// Check if user came from a shared URL link (/project/project_1 or ?id=project_1 or query params)
 function checkUrlParams() {
+  // 1. Check path: /project/<slug>
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const projIdx = pathParts.indexOf('project');
+  if (projIdx !== -1 && pathParts[projIdx + 1]) {
+    const slug = pathParts[projIdx + 1];
+    fetchProjectById(slug);
+    return true;
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
 
-  // 1. Direct Project ID: ?id=project_1
+  // 2. Direct Project ID in query: ?id=project_1
   if (urlParams.has('id')) {
     const pid = urlParams.get('id');
     fetchProjectById(pid);
     return true;
   }
 
-  // 2. Query String params
+  // 3. Query String params
   if (!urlParams.has('p1') && !urlParams.has('p2')) return false;
 
   const mode = urlParams.get('mode') || 'love';
@@ -1233,7 +1268,6 @@ function checkUrlParams() {
     state.girlPhotos = [urlParams.get('gimg')];
   }
 
-  // Auto extract immediately for the viewer!
   populateRomanticExperience();
   document.getElementById('creatorStudio').classList.remove('active-view');
   document.getElementById('romanticExperience').classList.add('active-view');

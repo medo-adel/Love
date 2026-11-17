@@ -8,3 +8,6 @@ $RECYCLE.BIN/
 # Logs
 *.log
 __pycache__/
+database.db
+uploads/*
+!uploads/.gitkeep
