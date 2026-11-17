@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حكايتنا | صانع مواقع الحب والصداقة 💖👊</title>
+  
+  <!-- Google Fonts: Cairo, Amiri, Great Vibes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700;900&family=Great+Vibes&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-rose">
+
+  <!-- Background Animated Canvas (Hearts, Stars & Petals) -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- ============================================== -->
+  <!-- 1. CREATOR STUDIO (شاشة رفع الصور وكتابة البيانات) -->
+  <!-- ============================================== -->
+  <div id="creatorStudio" class="app-view active-view">
+    <div class="studio-container">
+      
+      <!-- Studio Header -->
+      <header class="studio-header">
+        <div class="logo-badge">
+          <i class="fa-solid fa-heart-pulse heartbeat-icon" id="logoIcon"></i>
+          <span id="logoText">Story Maker • الحب والصداقة</span>
+        </div>
+        <h1 class="glow-title" id="pageMainTitle">اصنع موقعاً ساحراً لمن تحب 💖</h1>
+        <p class="studio-subtitle" id="pageMainSubtitle">
+          سواء كان لحبيبتك وأميرتك، أو لصاحبك وأخوك وعِشرة عمرك، 
+          اكتب الأسماء وارفع الصور وبضغطة زر على <span class="highlight-tag">Extract</span> 
+          هيتحول كل ده لموقع أسطوري مخصص يعبر عن أصدق مشاعرك!
+        </p>
+
+        <!-- MODE SWITCHER (حب ورومانسية VS صحاب وجدعنة) -->
+        <div class="mode-selection-bar">
+          <button type="button" class="mode-tab active" id="tabLove" onclick="setMode('love')">
+            <i class="fa-solid fa-heart"></i>
+            <span>حكاية حب ورومانسية 💖</span>
+          </button>
+          <button type="button" class="mode-tab" id="tabFriends" onclick="setMode('friends')">
+            <i class="fa-solid fa-user-group"></i>
+            <span>صحاب وجدعنة وبيست فريند 👊</span>
+          </button>
+        </div>
+
+        <div class="quick-demo-wrapper">
+          <button type="button" class="demo-fill-btn" id="loadDemoBtn">
+            <i class="fa-solid fa-wand-magic"></i>
+            <span id="demoBtnText">تجربة فورية بنموذج رومانسي تجريبي ✨</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Form Card -->
+      <div class="studio-card glass-panel">
+        
+        <!-- STEP 1: Basic Information -->
+        <section class="form-section">
+          <div class="section-title">
+            <span class="step-num">1</span>
+            <h3 id="step1Title">بيانات العاشقين 💑</h3>
+          </div>
+          
+          <div class="input-grid">
+            <div class="form-group">
+              <label for="person1Name" id="labelPerson1"><i class="fa-solid fa-mars"></i> اسم الشاب (أنت يا بطل)</label>
+              <input type="text" id="person1Name" placeholder="مثال: محمد، أحمد..." value="محمد">
+            </div>
+
+            <div class="form-group">
+              <label for="person2Name" id="labelPerson2"><i class="fa-solid fa-venus"></i> اسم البنت (حبيبتك وأميرتك)</label>
+              <input type="text" id="person2Name" placeholder="مثال: سارة، نور، مريم..." value="أميرتي">
+            </div>
+
+            <div class="form-group">
+              <label for="anniversaryDate" id="labelDate"><i class="fa-solid fa-calendar-heart"></i> تاريخ بداية حكايتكم أو أول لقاء</label>
+              <input type="date" id="anniversaryDate">
+              <small class="helper-text" id="helperDate">هيتم حساب عداد مباشر بالثواني والدقائق والأيام!</small>
+            </div>
+
+            <div class="form-group">
+              <label for="loveNickname" id="labelNickname"><i class="fa-solid fa-quote-right"></i> لقبها المفضل أو جملة خاصة بيكم</label>
+              <input type="text" id="loveNickname" placeholder="مثال: قمري، وتيني، أخويا وسندي..." value="نصفي الثاني وروح قلبي">
+            </div>
+          </div>
+        </section>
+
+        <!-- STEP 2: Photos Upload -->
+        <section class="form-section">
+          <div class="section-title">
+            <span class="step-num">2</span>
+            <h3 id="step2Title">الصور والذكريات 📸</h3>
+          </div>
+
+          <div class="upload-dual-grid">
+            <!-- Person 1 Photos Box -->
+            <div class="upload-box" id="boyDropZone">
+              <div class="upload-badge boy-badge" id="badgePerson1"><i class="fa-solid fa-user"></i> صور الشاب</div>
+              <div class="upload-drop-content">
+                <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                <p>اسحب صورك هنا أو اضغط للاختيار</p>
+                <span class="upload-hint">يمكنك اختيار صورة واحدة أو عدة صور</span>
+              </div>
+              <input type="file" id="boyImagesInput" accept="image/*" multiple class="file-hidden">
+              <div class="previews-container" id="boyPreviews"></div>
+            </div>
+
+            <!-- Person 2 Photos Box -->
+            <div class="upload-box" id="girlDropZone">
+              <div class="upload-badge girl-badge" id="badgePerson2"><i class="fa-solid fa-heart"></i> صور البنت</div>
+              <div class="upload-drop-content">
+                <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                <p>اسحب الصور هنا أو اضغط للاختيار</p>
+                <span class="upload-hint" id="badgePerson2Hint">اختار أجمل لقطات بتعشق ضحكتها فيها ✨</span>
+              </div>
+              <input type="file" id="girlImagesInput" accept="image/*" multiple class="file-hidden">
+              <div class="previews-container" id="girlPreviews"></div>
+            </div>
+          </div>
+
+          <!-- Together / Moments Photos Box -->
+          <div class="upload-box full-width-box" id="togetherDropZone">
+            <div class="upload-badge together-badge" id="badgeTogether"><i class="fa-solid fa-infinity"></i> صور تجمعكم سوا أو ذكريات مشتركة (اختياري)</div>
+            <div class="upload-drop-content">
+              <i class="fa-solid fa-images upload-icon"></i>
+              <p>اسحب صور ذكرياتكم وخروجاتكم سوا هنا أو اضغط لاختيارها</p>
+            </div>
+            <input type="file" id="togetherImagesInput" accept="image/*" multiple class="file-hidden">
+            <div class="previews-container" id="togetherPreviews"></div>
+          </div>
+        </section>
+
+        <!-- STEP 3: Love / Friendship Letter -->
+        <section class="form-section">
+          <div class="section-title">
+            <span class="step-num">3</span>
+            <h3 id="step3Title">جواب القلب والرسالة السرية 💌</h3>
+          </div>
+
+          <div class="message-presets">
+            <span id="presetsHeading">اقتراحات كلام جاهز يلمس القلب بضغطة واحدة:</span>
+            
+            <!-- Love Presets -->
+            <div class="presets-buttons" id="presetsLoveContainer">
+              <button type="button" class="preset-btn" onclick="applyLetterPreset('love_1')">💌 كلام حب وشوق</button>
+              <button type="button" class="preset-btn" onclick="applyLetterPreset('love_2')">💍 وعد وأمان للمستقبل</button>
+              <button type="button" class="preset-btn" onclick="applyLetterPreset('love_3')">✨ امتنان لوجودها في حياتك</button>
+            </div>
+
+            <!-- Friendship Presets -->
+            <div class="presets-buttons" id="presetsFriendsContainer" style="display: none;">
+              <button type="button" class="preset-btn" onclick="applyLetterPreset('friends_1')">👊 عِشرة العمر وأجدع صاحب وسند</button>
+              <button type="button" class="preset-btn" onclick="applyLetterPreset('friends_2')">😂 شريك الضحك والمصايب والمغامرات</button>
+              <button type="button" class="preset-btn" onclick="applyLetterPreset('friends_3')">👑 أخ لم تلده أمي وكلمة شكر</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="loveLetterText" id="labelLetterText"><i class="fa-solid fa-envelope-open-text"></i> رسالتك الخاصة (هتظهر جوه جواب تفاعلي سحري يتفتح بالضغط عليه):</label>
+            <textarea id="loveLetterText" rows="5" placeholder="اكتب كل مشاعرك وكلامك الصادق من قلبك..."></textarea>
+          </div>
+        </section>
+
+        <!-- STEP 4: Customization & Music -->
+        <section class="form-section">
+          <div class="section-title">
+            <span class="step-num">4</span>
+            <h3>المزيكا والثيم والأجواء 🎵</h3>
+          </div>
+
+          <div class="input-grid">
+            <div class="form-group">
+              <label for="themeSelect"><i class="fa-solid fa-palette"></i> ثيم وألوان الموقع</label>
+              <select id="themeSelect">
+                <!-- Romantic Themes -->
+                <optgroup label="💖 ثيمات الرومانسية والحب">
+                  <option value="theme-rose">🌹 رومانسي وردي دافئ (Rose Romance)</option>
+                  <option value="theme-midnight">🌌 ليلة سحرية بنفسجية (Midnight Magic)</option>
+                  <option value="theme-gold">✨ ذهبي ملكي فخم (Royal Gold)</option>
+                  <option value="theme-cherry">🌸 أزهار الكرز الرقيقة (Sakura Bloom)</option>
+                </optgroup>
+                <!-- Friendship Themes -->
+                <optgroup label="👊 ثيمات الصحاب والجدعنة">
+                  <option value="theme-friends-cyan">⚡ أزرق وسيان عصري (Cyber Cyan • الجدعنة)</option>
+                  <option value="theme-friends-emerald">🌿 زمردي ملكي وسند (Emerald Loyalty • العِشرة)</option>
+                  <option value="theme-friends-sunset">🌅 غروب دافئ وذكريات (Sunset Friends • أحلى أيام)</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="bgMusicSelect"><i class="fa-solid fa-music"></i> الموسيقى الخلفية</label>
+              <select id="bgMusicSelect">
+                <option value="piano">🎹 بيانو هادئ ورومانسي نقي (Sweet Piano Melody)</option>
+                <option value="lofi">🎧 لوفاي دافئ للاسترخاء والذكريات (Cozy Vibes)</option>
+                <option value="custom">📁 رفع ملف صوتي من جهازي (MP3 / Audio)</option>
+              </select>
+              <input type="file" id="customAudioInput" accept="audio/*" class="file-hidden">
+            </div>
+          </div>
+        </section>
+
+        <!-- EXTRACT ACTION BUTTON -->
+        <div class="extract-action-box">
+          <button type="button" id="extractBtn" class="magic-extract-btn">
+            <div class="btn-glow"></div>
+            <i class="fa-solid fa-wand-magic-sparkles fa-bounce"></i>
+            <span id="extractBtnText">توليد موقعنا الساحر (Extract Website)</span>
+            <i class="fa-solid fa-heart pulse" id="extractBtnIcon"></i>
+          </button>
+          <p class="extract-note" id="extractNoteText">
+            ✨ اضغط Extract وشاهد السحر وهو بيجمع صوركم وكلماتكم في موقع خيالي مذهل!
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================== -->
+  <!-- 2. THE GENERATED EXPERIENCE (الموقع المُستخرج) -->
+  <!-- ============================================== -->
+  <div id="romanticExperience" class="app-view">
+    
+    <!-- Floating Quick Control Bar -->
+    <aside class="love-control-bar glass-bar">
+      <button class="ctrl-btn" id="toggleMusicBtn" title="تشغيل / كتم الموسيقى">
+        <i class="fa-solid fa-music"></i>
+        <span class="music-wave">
+          <span></span><span></span><span></span><span></span>
+        </span>
+      </button>
+      <button class="ctrl-btn" id="showerHeartsBtn" title="انفجار قلوب واحتفال!">
+        <i class="fa-solid fa-heart fa-beat" id="showerBtnIcon"></i>
+      </button>
+      <button class="ctrl-btn" id="shareLiveBtn" onclick="openShareModal()" title="مشاركة كرابط أونلاين مباشر">
+        <i class="fa-solid fa-globe"></i>
+        <span>رابط أونلاين</span>
+      </button>
+      <button class="ctrl-btn" id="exportBtn" title="تحميل الموقع كملف HTML مستقل هدية!">
+        <i class="fa-solid fa-file-arrow-down"></i>
+        <span>تحميل الملف</span>
+      </button>
+      <button class="ctrl-btn" id="backToStudioBtn" title="الرجوع للتعديل">
+        <i class="fa-solid fa-pen-to-square"></i>
+        <span>تعديل</span>
+      </button>
+    </aside>
+
+    <!-- Hero Romantic / Friendship Banner -->
+    <header class="romantic-hero">
+      <div class="hero-sparkles-top" id="heroSparklesTop">✨ ❤️ ✨</div>
+      <div class="couple-badge">
+        <span id="displayBoyName" class="name-hero">محمد</span>
+        <div class="infinity-heart-icon" id="heroCenterIcon">
+          <i class="fa-solid fa-infinity"></i>
+          <i class="fa-solid fa-heart inner-heart" id="heroInnerHeart"></i>
+        </div>
+        <span id="displayGirlName" class="name-hero">أميرتي</span>
+      </div>
+
+      <h1 class="hero-quote-heading" id="displaySubtitle">
+        "كل ثانية معاكي هي أجمل قصة اتكتبت في حياتي"
+      </h1>
+      <p class="hero-subtext" id="displayLoveNickname">
+        نصفي الثاني وروح قلبي
+      </p>
+
+      <div class="scroll-down-indicator">
+        <span id="scrollDownText">انزل وشوف حكايتنا</span>
+        <i class="fa-solid fa-angles-down bounce-slow"></i>
+      </div>
+    </header>
+
+    <!-- SECTION: LIVE COUNTER -->
+    <section class="romantic-section counter-section">
+      <div class="section-badge-center">
+        <i class="fa-solid fa-stopwatch" id="counterBadgeIcon"></i>
+        <span id="counterBadgeText">نبضات قلوبنا مع بعض</span>
+      </div>
+      <h2 class="section-heading" id="counterHeading">عداد الحب والذكريات الجميلة ⏳</h2>
+      <p class="section-sub" id="counterSub">منذ اللحظة الأولى التي أضاءت فيها حياتي بوجودك، وكل ثانية بتمر وأنا بحبك أكتر:</p>
+
+      <div class="counter-display-card glass-panel">
+        <div class="time-block">
+          <span class="time-val" id="countDays">0</span>
+          <span class="time-lbl">يوماً</span>
+        </div>
+        <div class="time-divider">:</div>
+        <div class="time-block">
+          <span class="time-val" id="countHours">0</span>
+          <span class="time-lbl">ساعة</span>
+        </div>
+        <div class="time-divider">:</div>
+        <div class="time-block">
+          <span class="time-val" id="countMinutes">0</span>
+          <span class="time-lbl">دقيقة</span>
+        </div>
+        <div class="time-divider">:</div>
+        <div class="time-block">
+          <span class="time-val" id="countSeconds">0</span>
+          <span class="time-lbl">ثانية</span>
+        </div>
+      </div>
+      <p class="counter-footer-quote" id="counterFooterQuote">"وما زلتِ يا كل أمنياتي، أجمل ما حدث في تاريخي."</p>
+    </section>
+
+    <!-- SECTION: THE TWO SOULS (صور الطرفين) -->
+    <section class="romantic-section souls-section">
+      <div class="section-badge-center">
+        <i class="fa-solid fa-user-group" id="soulsBadgeIcon"></i>
+        <span id="soulsBadgeText">روحين التقوا في جسد واحد</span>
+      </div>
+      <h2 class="section-heading" id="soulsHeading">حكاية قمر ونجمته 🌟</h2>
+
+      <div class="souls-duo-container">
+        <!-- Person 1 Card -->
+        <div class="soul-card glass-panel" id="boySoulCard">
+          <div class="soul-avatar-wrapper">
+            <div class="soul-img-ring" id="ringPerson1">
+              <img id="boyFeaturedImg" src="" alt="صورته" class="soul-avatar-img">
+            </div>
+            <div class="soul-role-tag boy-tag" id="tagPerson1">هو • فارس قلبها</div>
+          </div>
+          <h3 class="soul-name" id="boySoulName">محمد</h3>
+          <p class="soul-quote" id="boySoulCaption">
+            "وعدت نفسي أن أكون سندك، أمانك، والكتف الذي لا يميل أبداً."
+          </p>
+          <div class="soul-mini-thumbnails" id="boyMiniGallery"></div>
+        </div>
+
+        <!-- Connection Bridge -->
+        <div class="souls-bridge">
+          <div class="bridge-line"></div>
+          <div class="bridge-heart-circle" id="bridgeCenterCircle">
+            <i class="fa-solid fa-heart heartbeat-infinite" id="bridgeCenterIcon"></i>
+          </div>
+          <div class="bridge-line"></div>
+        </div>
+
+        <!-- Person 2 Card -->
+        <div class="soul-card glass-panel" id="girlSoulCard">
+          <div class="soul-avatar-wrapper">
+            <div class="soul-img-ring girl-ring" id="ringPerson2">
+              <img id="girlFeaturedImg" src="" alt="صورتها" class="soul-avatar-img">
+            </div>
+            <div class="soul-role-tag girl-tag" id="tagPerson2">هي • أميرة قلبه وملاكه</div>
+          </div>
+          <h3 class="soul-name" id="girlSoulName">أميرتي</h3>
+          <p class="soul-quote" id="girlSoulCaption">
+            "في عيونك أرى وطني وراحتي، وضحكتك هي النور الذي يبهج كل أيامي."
+          </p>
+          <div class="soul-mini-thumbnails" id="girlMiniGallery"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: MEMORIES GALLERY -->
+    <section class="romantic-section gallery-section">
+      <div class="section-badge-center">
+        <i class="fa-solid fa-camera-retro"></i>
+        <span>أجمل اللقطات والذكريات</span>
+      </div>
+      <h2 class="section-heading" id="galleryHeading">معرض حكاياتنا المصورة 📸</h2>
+      <p class="section-sub" id="gallerySub">كل صورة هنا ليها دقة قلب وذكرى لا يمكن أن تُنسى:</p>
+
+      <div class="polaroid-grid" id="romanticGalleryGrid">
+        <!-- Dynamically injected polaroids -->
+      </div>
+    </section>
+
+    <!-- SECTION: INTERACTIVE 3D LOVE LETTER (المظروف السحري) -->
+    <section class="romantic-section letter-section">
+      <div class="section-badge-center">
+        <i class="fa-solid fa-envelope" id="letterBadgeIcon"></i>
+        <span id="letterBadgeText">سر مكتوب بمداد القلب</span>
+      </div>
+      <h2 class="section-heading" id="letterSectionHeading">جواب غرامي إلى أجمل فتاة في الكون 💌</h2>
+      <p class="section-sub" id="letterSectionSub">اضغطي على المظروف لفك الختم وقراءة الرسالة التي كتبها قلبي لكِ:</p>
+
+      <div class="envelope-interactive-wrap">
+        <!-- 3D Envelope Container -->
+        <div class="envelope-box" id="envelopeBox" onclick="toggleLoveLetter()">
+          <div class="envelope-flap" id="envelopeFlap"></div>
+          <div class="envelope-pocket" id="envelopePocket"></div>
+          <div class="envelope-stamp" id="envelopeStamp">
+            <i class="fa-solid fa-heart" id="envelopeStampIcon"></i>
+          </div>
+          <div class="letter-paper" id="letterPaper">
+            <div class="letter-header">
+              <span class="letter-date" id="letterDisplayDate">إلى حبيبتي الأبدية</span>
+              <i class="fa-solid fa-feather-pointed"></i>
+            </div>
+            <div class="letter-body" id="displayLetterBody">
+              <!-- Inserted dynamically -->
+            </div>
+            <div class="letter-signature">
+              <span id="letterSignatureLabel">المخلص لقلبك دائماً وأبداً،</span>
+              <h4 id="displaySignatureName">حبيبك</h4>
+            </div>
+          </div>
+        </div>
+        <div class="envelope-hint">
+          <i class="fa-solid fa-hand-pointer fa-bounce"></i>
+          <span>اضغط على الجواب لفتحه وغلقه</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: INTERACTIVE DECK (بطاقات تفاعلية) -->
+    <section class="romantic-section reasons-section">
+      <div class="section-badge-center">
+        <i class="fa-solid fa-wand-magic" id="reasonsBadgeIcon"></i>
+        <span id="reasonsBadgeText">أسرار مكانتك في قلبي</span>
+      </div>
+      <h2 class="section-heading" id="reasonsHeading">ليه قلبي اختارك أنتي بالذات؟ 💖</h2>
+      <p class="section-sub" id="reasonsSub">اضغطي على الزر وشوفي كل مرة سبب من ألوف الأسباب اللي بتخليني أعشقك:</p>
+
+      <div class="reasons-interactive-card glass-panel">
+        <div class="reason-icon-bubble" id="reasonBubble">
+          <i class="fa-solid fa-sparkles" id="reasonIcon"></i>
+        </div>
+        <div class="reason-quote-box">
+          <p id="currentReasonText">"لأن ضحكتكِ قادرة على أن تمحو أي تعب في روحي، وتبدل حزني لفرح في ثانية واحدة."</p>
+        </div>
+        <button type="button" class="next-reason-btn" onclick="showNextReason()">
+          <i class="fa-solid fa-rotate"></i>
+          <span id="nextReasonBtnText">اضغط هنا وشوف سبب جديد ✨</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- SECTION: ETERNAL PROMISE & FINALE -->
+    <footer class="romantic-footer">
+      <div class="footer-heart-ring">
+        <i class="fa-solid fa-heart heartbeat-huge" id="footerMainIcon"></i>
+      </div>
+      <h2 class="footer-vow-title" id="footerVowTitle">وعدٌ أزلي بقلبٍ لا يخون</h2>
+      <p class="footer-vow-text" id="footerVowText">
+        "أعدكِ أمام الله، أن أظل سندكِ الذي لا ينكسر، ومأواكِ الدافئ حين يقسو العالم، 
+        وأن أحبكِ في كل يوم بطريقة جديدة كأنني أراكِ لأول مرة."
+      </p>
+      
+      <div class="love-badge-signature">
+        <span id="footerCoupleNames">محمد ❤️ أميرتي</span>
+        <small id="footerSubText">معاً إلى الأبد • Forever & Always</small>
+      </div>
+
+      <div class="footer-interactive-buttons">
+        <button class="footer-btn love-btn" id="footerActionBtn" onclick="triggerHeartShower()">
+          <i class="fa-solid fa-heart" id="footerActionIcon"></i>
+          <span id="footerActionText">أمطرنا بقلوب الحب! 💖</span>
+        </button>
+        <button class="footer-btn share-btn" onclick="openShareModal()">
+          <i class="fa-solid fa-globe"></i>
+          <span>مشاركة كرابط أونلاين مباشر 🌐</span>
+        </button>
+        <button class="footer-btn export-btn" onclick="exportStandaloneSite()">
+          <i class="fa-solid fa-gift"></i>
+          <span>احفظ كملف مستقل هدية 🎁</span>
+        </button>
+      </div>
+    </footer>
+
+  </div>
+
+
+  <!-- SHARE LIVE MODAL -->
+  <div id="shareModal" class="modal-overlay" onclick="closeShareModal(event)">
+    <div class="share-modal-card glass-panel" onclick="event.stopPropagation()">
+      <span class="modal-close" onclick="closeShareModal(event)">&times;</span>
+      <div class="share-modal-header">
+        <i class="fa-solid fa-globe globe-glow"></i>
+        <h3>مشاركة الموقع كرابط أونلاين مباشر 🌐</h3>
+        <p>الرابط ده تقدر تبعته لأي حد، أول ما يفتحه هيشوف موقعكم الجميل بنفس البيانات والكلمات والصور!</p>
+      </div>
+      
+      <div class="share-link-box">
+        <input type="text" id="shareLiveUrlInput" readonly>
+        <button type="button" class="copy-url-btn" onclick="copyShareUrl()">
+          <i class="fa-solid fa-copy"></i>
+          <span id="copyBtnText">نسخ الرابط</span>
+        </button>
+      </div>
+
+      <div class="share-platforms">
+        <button class="platform-btn whatsapp-btn" onclick="shareOnWhatsApp()">
+          <i class="fa-brands fa-whatsapp"></i>
+          <span>إرسال على واتساب</span>
+        </button>
+        <button class="platform-btn telegram-btn" onclick="shareOnTelegram()">
+          <i class="fa-brands fa-telegram"></i>
+          <span>إرسال على تليجرام</span>
+        </button>
+      </div>
+
+      <div class="github-host-info">
+        <i class="fa-brands fa-github"></i>
+        <span>موقعك مرفوع وجاهز للاستضافة على GitHub Pages:</span>
+        <code id="ghPagesLink">https://medo-adel.github.io/Love/</code>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- LIGHTBOX / FULLSCREEN IMAGE MODAL -->
+  <div id="imageLightbox" class="lightbox-modal" onclick="closeLightbox(event)">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightboxImg" src="" alt="صورة مكبرة">
+    <p id="lightboxCaption" class="lightbox-caption"></p>
+  </div>
+
+  <!-- Background Music Audio Element -->
+  <audio id="romanticAudioPlayer" loop preload="auto"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>
