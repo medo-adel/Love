@@ -417,6 +417,39 @@ body {
   transform: translateY(-3px);
 }
 
+.url-input-mini {
+  margin-top: 14px;
+  width: 92%;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 25px;
+  padding: 5px 14px;
+  gap: 8px;
+  cursor: default;
+}
+
+.url-input-mini i {
+  color: var(--secondary-color);
+  font-size: 0.85rem;
+}
+
+.url-input-mini input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 0.82rem;
+  font-family: var(--font-arabic);
+  width: 100%;
+  padding: 4px 0;
+  direction: ltr;
+}
+
+.url-input-mini input:focus {
+  outline: none;
+}
+
 .upload-badge {
   position: absolute;
   top: -14px;
@@ -1588,6 +1621,37 @@ body {
 .telegram-btn:hover {
   background: #0077b3;
   transform: translateY(-2px);
+}
+
+.share-photo-hint {
+  background: rgba(255, 209, 102, 0.08);
+  border: 1px solid rgba(255, 209, 102, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: right;
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.share-photo-hint i {
+  color: var(--accent-gold);
+  font-size: 1.4rem;
+  margin-top: 3px;
+}
+
+.share-photo-hint strong {
+  color: var(--accent-gold);
+}
+
+.share-photo-hint p {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  margin-top: 6px;
+  line-height: 1.6;
 }
 
 .github-host-info {

@@ -507,6 +507,17 @@ function handleExtract() {
   state.loveLetter = document.getElementById('loveLetterText').value.trim() || (state.mode === 'love' ? letterPresets.love_1 : letterPresets.friends_1);
   state.theme = document.getElementById('themeSelect').value;
 
+  // Add Direct Image URLs if entered
+  const boyUrl = document.getElementById('boyUrlInput') ? document.getElementById('boyUrlInput').value.trim() : '';
+  if (boyUrl && !state.boyPhotos.includes(boyUrl)) {
+    state.boyPhotos.unshift(boyUrl);
+  }
+
+  const girlUrl = document.getElementById('girlUrlInput') ? document.getElementById('girlUrlInput').value.trim() : '';
+  if (girlUrl && !state.girlPhotos.includes(girlUrl)) {
+    state.girlPhotos.unshift(girlUrl);
+  }
+
   document.body.className = state.theme;
 
   playMagicalChime();
@@ -1037,6 +1048,15 @@ window.openShareModal = function() {
   params.set('theme', state.theme);
   params.set('msg', state.loveLetter);
 
+  // If photos have web URLs or images/ paths, include them!
+  const boyImg = state.boyPhotos.find(p => p.startsWith('http') || p.startsWith('images/')) 
+    || (document.getElementById('boyUrlInput') ? document.getElementById('boyUrlInput').value.trim() : '');
+  const girlImg = state.girlPhotos.find(p => p.startsWith('http') || p.startsWith('images/')) 
+    || (document.getElementById('girlUrlInput') ? document.getElementById('girlUrlInput').value.trim() : '');
+
+  if (boyImg) params.set('bimg', boyImg);
+  if (girlImg) params.set('gimg', girlImg);
+
   const fullShareUrl = `${currentBase}?${params.toString()}`;
   input.value = fullShareUrl;
 
@@ -1093,6 +1113,14 @@ function checkUrlParams() {
   document.getElementById('loveLetterText').value = state.loveLetter;
   document.getElementById('themeSelect').value = state.theme;
   document.body.className = state.theme;
+
+  // Read images from URL if passed
+  if (urlParams.has('bimg')) {
+    state.boyPhotos = [urlParams.get('bimg')];
+  }
+  if (urlParams.has('gimg')) {
+    state.girlPhotos = [urlParams.get('gimg')];
+  }
 
   // Auto extract immediately for the viewer!
   populateRomanticExperience();

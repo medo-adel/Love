@@ -110,9 +110,13 @@
               <div class="upload-drop-content">
                 <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
                 <p>اسحب صورك هنا أو اضغط للاختيار</p>
-                <span class="upload-hint">يمكنك اختيار صورة واحدة أو عدة صور</span>
+                <span class="upload-hint">يمكنك اختيار صورة واحدة أو عدة صور من جهازك</span>
               </div>
               <input type="file" id="boyImagesInput" accept="image/*" multiple class="file-hidden">
+              <div class="url-input-mini" onclick="event.stopPropagation()">
+                <i class="fa-solid fa-link"></i>
+                <input type="url" id="boyUrlInput" placeholder="أو ضع رابط صورة أونلاين مباشر (URL)...">
+              </div>
               <div class="previews-container" id="boyPreviews"></div>
             </div>
 
@@ -125,6 +129,10 @@
                 <span class="upload-hint" id="badgePerson2Hint">اختار أجمل لقطات بتعشق ضحكتها فيها ✨</span>
               </div>
               <input type="file" id="girlImagesInput" accept="image/*" multiple class="file-hidden">
+              <div class="url-input-mini" onclick="event.stopPropagation()">
+                <i class="fa-solid fa-link"></i>
+                <input type="url" id="girlUrlInput" placeholder="أو ضع رابط صورتها أونلاين مباشر (URL)...">
+              </div>
               <div class="previews-container" id="girlPreviews"></div>
             </div>
           </div>
@@ -504,6 +512,14 @@
           <i class="fa-brands fa-telegram"></i>
           <span>إرسال على تليجرام</span>
         </button>
+      </div>
+
+      <div class="share-photo-hint">
+        <i class="fa-solid fa-lightbulb"></i>
+        <div>
+          <strong>لتظهر صوركم الشخصية لكل من يفتح الرابط:</strong>
+          <p>ضع صوركم داخل مجلد <code>images</code> في المشروع وارفعها على GitHub، أو الصق رابط صورة أونلاين مباشر، أو استخدم زر <strong>"تحميل الموقع هدية 🎁"</strong> لإرسال ملف متكامل تظهر فيه الصور أوفلاين 100%!</p>
+        </div>
       </div>
 
       <div class="github-host-info">
