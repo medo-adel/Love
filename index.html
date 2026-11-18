@@ -118,6 +118,31 @@
             <h3 id="step2Title">الصور والذكريات 📸</h3>
           </div>
 
+          <!-- Cloud Upload API Bar (ImgBB Integration) -->
+          <div class="cloud-api-bar">
+            <div class="cloud-api-header">
+              <div class="cloud-title">
+                <i class="fa-solid fa-cloud-arrow-up cloud-icon-glow"></i>
+                <div>
+                  <strong>الرفع السحابي المباشر (لتظهر الصور في الرابط لأي شخص) ☁️</strong>
+                  <p>اربط بمفتاح ImgBB المجاني (بدون كارت نهائياً) ليتم رفع أي صورة تختارها وتظهر في الرابط فوراً!</p>
+                </div>
+              </div>
+              <span id="cloudStatusBadge" class="status-badge disconnected">غير مفعل</span>
+            </div>
+            <div class="cloud-api-input-wrap">
+              <input type="text" id="imgbbApiKeyInput" placeholder="الصق مفتاح ImgBB API المجاني هنا..." autocomplete="off">
+              <button type="button" class="save-api-key-btn" onclick="saveImgBBApiKey()">
+                <i class="fa-solid fa-check"></i>
+                <span>تفعيل</span>
+              </button>
+              <a href="https://api.imgbb.com/" target="_blank" rel="noopener" class="get-key-link" title="احصل على مفتاح مجاني في 10 ثوانٍ">
+                <i class="fa-solid fa-key"></i>
+                <span>احصل على مفتاح مجاني في 10 ثوانٍ</span>
+              </a>
+            </div>
+          </div>
+
           <div class="upload-dual-grid">
             <!-- Person 1 Photos Box -->
             <div class="upload-box" id="boyDropZone">

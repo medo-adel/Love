@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initParticleCanvas();
   setupUploadZones();
   setupEventListeners();
+  initCloudApiKey();
   loadSavedProjectsList();
 
   // Render initial photo previews
@@ -105,6 +106,37 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('anniversaryDate').value = defaultDate.toISOString().split('T')[0];
   }
 });
+
+// Cloud API Key (ImgBB) Management
+function initCloudApiKey() {
+  const savedKey = localStorage.getItem('imgbb_api_key');
+  const input = document.getElementById('imgbbApiKeyInput');
+  const badge = document.getElementById('cloudStatusBadge');
+  if (savedKey) {
+    if (input) input.value = savedKey;
+    if (badge) {
+      badge.textContent = 'مفعل وجاهز ✔️';
+      badge.className = 'status-badge connected';
+    }
+  }
+}
+
+window.saveImgBBApiKey = function() {
+  const input = document.getElementById('imgbbApiKeyInput');
+  const badge = document.getElementById('cloudStatusBadge');
+  const key = input.value.trim();
+  if (key) {
+    localStorage.setItem('imgbb_api_key', key);
+    badge.textContent = 'مفعل وجاهز ✔️';
+    badge.className = 'status-badge connected';
+    playMagicalChime();
+    triggerHeartShower();
+  } else {
+    localStorage.removeItem('imgbb_api_key');
+    badge.textContent = 'غير مفعل';
+    badge.className = 'status-badge disconnected';
+  }
+};
 
 // Load saved projects list if server is running
 function loadSavedProjectsList() {
@@ -380,26 +412,60 @@ function setupSingleDropZone(dropZoneId, inputId, previewId, storageArray) {
 
 function handleImageFiles(files, storageArray, previewContainer) {
   if (!files || files.length === 0) return;
+  const apiKey = localStorage.getItem('imgbb_api_key');
 
   Array.from(files).forEach(file => {
     if (!file.type.startsWith('image/')) return;
 
+    // 1. Immediate local preview
     const reader = new FileReader();
-    reader.onload = (e) => {
-      storageArray.push(e.target.result);
+    reader.onload = async (e) => {
+      const localDataUrl = e.target.result;
+      const targetIndex = storageArray.length;
+      storageArray.push(localDataUrl);
       renderPreviews(storageArray, previewContainer);
+
+      // 2. Upload to ImgBB if Cloud API Key is enabled
+      if (apiKey) {
+        try {
+          const directCloudUrl = await uploadFileToImgBB(file, apiKey);
+          if (directCloudUrl) {
+            storageArray[targetIndex] = directCloudUrl;
+            renderPreviews(storageArray, previewContainer);
+            console.log('ImgBB Cloud Upload SUCCESS:', directCloudUrl);
+          }
+        } catch (err) {
+          console.warn('Cloud upload failed, using local preview:', err);
+        }
+      }
     };
     reader.readAsDataURL(file);
   });
 }
 
+async function uploadFileToImgBB(file, apiKey) {
+  const formData = new FormData();
+  formData.append('image', file);
+  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+    method: 'POST',
+    body: formData
+  });
+  const data = await res.json();
+  if (data && data.success && data.data && data.data.url) {
+    return data.data.url;
+  }
+  return null;
+}
+
 function renderPreviews(storageArray, container) {
   container.innerHTML = '';
   storageArray.forEach((dataUrl, idx) => {
+    const isCloud = dataUrl.startsWith('http');
     const thumb = document.createElement('div');
     thumb.className = 'preview-thumb';
     thumb.innerHTML = `
       <img src="${dataUrl}" alt="صورة ${idx + 1}">
+      ${isCloud ? '<span class="cloud-synced-pill" title="مرفوعة على السحابة وجاهزة للمشاركة">☁️</span>' : ''}
       <button class="remove-thumb-btn" type="button" title="حذف الصورة" onclick="removeImage(${idx}, this)">&times;</button>
     `;
     container.appendChild(thumb);
