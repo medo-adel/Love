@@ -410,6 +410,83 @@ function setupSingleDropZone(dropZoneId, inputId, previewId, storageArray) {
   });
 }
 
+// ==========================================================================
+// IMAGE COMPRESSION & SEQUENTIAL CLOUD UPLOAD (ImgBB)
+// ==========================================================================
+
+// Compress image before uploading to guarantee super-fast upload (<150KB) and prevent network timeouts
+function compressImage(source, maxWidth = 1200, quality = 0.82) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth || height > maxWidth) {
+        if (width > height) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        } else {
+          width = Math.round((width * maxWidth) / height);
+          height = maxWidth;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob((blob) => {
+        resolve(blob || source);
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = () => resolve(source);
+
+    if (source instanceof Blob || source instanceof File) {
+      img.src = URL.createObjectURL(source);
+    } else {
+      img.src = source;
+    }
+  });
+}
+
+async function uploadFileToImgBB(fileOrDataUrl, apiKey, retry = true) {
+  try {
+    const compressedBlob = await compressImage(fileOrDataUrl, 1200, 0.82);
+    const formData = new FormData();
+    formData.append('image', compressedBlob, 'photo.jpg');
+
+    const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (res.status === 429 && retry) {
+      // Rate limited, wait 1.5 seconds and retry
+      await new Promise(r => setTimeout(r, 1500));
+      return uploadFileToImgBB(fileOrDataUrl, apiKey, false);
+    }
+
+    const data = await res.json();
+    if (data && data.success && data.data && data.data.url) {
+      return data.data.url;
+    }
+  } catch (err) {
+    console.warn('ImgBB Upload error:', err);
+    if (retry) {
+      await new Promise(r => setTimeout(r, 1200));
+      return uploadFileToImgBB(fileOrDataUrl, apiKey, false);
+    }
+  }
+  return null;
+}
+
+let isProcessingQueue = false;
+const globalUploadQueue = [];
+
 function handleImageFiles(files, storageArray, previewContainer) {
   if (!files || files.length === 0) return;
   const apiKey = localStorage.getItem('imgbb_api_key');
@@ -419,42 +496,51 @@ function handleImageFiles(files, storageArray, previewContainer) {
 
     // 1. Immediate local preview
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       const localDataUrl = e.target.result;
-      const targetIndex = storageArray.length;
       storageArray.push(localDataUrl);
       renderPreviews(storageArray, previewContainer);
 
-      // 2. Upload to ImgBB if Cloud API Key is enabled
+      // 2. Queue for sequential cloud upload
       if (apiKey) {
-        try {
-          const directCloudUrl = await uploadFileToImgBB(file, apiKey);
-          if (directCloudUrl) {
-            storageArray[targetIndex] = directCloudUrl;
-            renderPreviews(storageArray, previewContainer);
-            console.log('ImgBB Cloud Upload SUCCESS:', directCloudUrl);
-          }
-        } catch (err) {
-          console.warn('Cloud upload failed, using local preview:', err);
-        }
+        globalUploadQueue.push({
+          file: file,
+          localDataUrl: localDataUrl,
+          storageArray: storageArray,
+          previewContainer: previewContainer
+        });
+        processUploadQueue();
       }
     };
     reader.readAsDataURL(file);
   });
 }
 
-async function uploadFileToImgBB(file, apiKey) {
-  const formData = new FormData();
-  formData.append('image', file);
-  const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-    method: 'POST',
-    body: formData
-  });
-  const data = await res.json();
-  if (data && data.success && data.data && data.data.url) {
-    return data.data.url;
+async function processUploadQueue() {
+  if (isProcessingQueue) return;
+  isProcessingQueue = true;
+
+  const apiKey = localStorage.getItem('imgbb_api_key');
+  while (globalUploadQueue.length > 0) {
+    const task = globalUploadQueue.shift();
+    if (apiKey) {
+      const cloudUrl = await uploadFileToImgBB(task.file, apiKey);
+      if (cloudUrl) {
+        const idx = task.storageArray.indexOf(task.localDataUrl);
+        if (idx !== -1) {
+          task.storageArray[idx] = cloudUrl;
+        } else {
+          task.storageArray.push(cloudUrl);
+        }
+        renderPreviews(task.storageArray, task.previewContainer);
+        console.log('ImgBB Cloud Upload SUCCESS:', cloudUrl);
+      }
+    }
+    // Small delay between uploads so ImgBB never rate limits
+    await new Promise(r => setTimeout(r, 150));
   }
-  return null;
+
+  isProcessingQueue = false;
 }
 
 function renderPreviews(storageArray, container) {
@@ -1180,9 +1266,61 @@ window.closeLightbox = function(event) {
 // ==========================================================================
 // SHARE LIVE ONLINE MODAL & URL GENERATOR
 // ==========================================================================
-window.openShareModal = function() {
+window.openShareModal = async function() {
   const modal = document.getElementById('shareModal');
   const input = document.getElementById('shareLiveUrlInput');
+  const apiKey = localStorage.getItem('imgbb_api_key');
+
+  modal.classList.add('active');
+
+  // Check for any unuploaded photos in state
+  const unuploadedBoy = state.boyPhotos.filter(p => p && p.startsWith('data:'));
+  const unuploadedGirl = state.girlPhotos.filter(p => p && p.startsWith('data:'));
+  const unuploadedTogether = state.togetherPhotos.filter(p => p && p.startsWith('data:'));
+  const totalUnuploaded = unuploadedBoy.length + unuploadedGirl.length + unuploadedTogether.length;
+
+  if (totalUnuploaded > 0) {
+    if (!apiKey) {
+      input.value = `⚠️ يرجى تفعيل مفتاح ImgBB المجاني بالخطوة 2 ليتم رفع كل الـ ${totalUnuploaded} صورة للرابط!`;
+      return;
+    }
+
+    input.value = `جاري رفع باقي الصور سحابياً (${totalUnuploaded} متبقية)... يرجى الانتظار ثوانٍ معدودة ⏳`;
+
+    let doneCount = 0;
+    // Upload remaining boy photos
+    for (let i = 0; i < state.boyPhotos.length; i++) {
+      if (state.boyPhotos[i].startsWith('data:')) {
+        const cloudUrl = await uploadFileToImgBB(state.boyPhotos[i], apiKey);
+        if (cloudUrl) state.boyPhotos[i] = cloudUrl;
+        doneCount++;
+        input.value = `جاري رفع باقي الصور سحابياً (${doneCount} / ${totalUnuploaded})... ⏳`;
+      }
+    }
+    // Upload remaining girl photos
+    for (let i = 0; i < state.girlPhotos.length; i++) {
+      if (state.girlPhotos[i].startsWith('data:')) {
+        const cloudUrl = await uploadFileToImgBB(state.girlPhotos[i], apiKey);
+        if (cloudUrl) state.girlPhotos[i] = cloudUrl;
+        doneCount++;
+        input.value = `جاري رفع باقي الصور سحابياً (${doneCount} / ${totalUnuploaded})... ⏳`;
+      }
+    }
+    // Upload remaining together photos
+    for (let i = 0; i < state.togetherPhotos.length; i++) {
+      if (state.togetherPhotos[i].startsWith('data:')) {
+        const cloudUrl = await uploadFileToImgBB(state.togetherPhotos[i], apiKey);
+        if (cloudUrl) state.togetherPhotos[i] = cloudUrl;
+        doneCount++;
+        input.value = `جاري رفع باقي الصور سحابياً (${doneCount} / ${totalUnuploaded})... ⏳`;
+      }
+    }
+
+    // Refresh previews in studio
+    renderPreviews(state.boyPhotos, document.getElementById('boyPreviews'));
+    renderPreviews(state.girlPhotos, document.getElementById('girlPreviews'));
+    renderPreviews(state.togetherPhotos, document.getElementById('togetherPreviews'));
+  }
 
   // Base URL (GitHub Pages or current host)
   const ghPagesBase = 'https://medo-adel.github.io/Love/';
@@ -1223,7 +1361,6 @@ window.openShareModal = function() {
   }
 
   input.value = fullShareUrl;
-  modal.classList.add('active');
 };
 
 window.closeShareModal = function(event) {
