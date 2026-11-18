@@ -86,7 +86,7 @@ def create_project():
         saved_photos = []
 
         if is_json and payload:
-            # Base64 images processing
+            # Base64 images or Direct Cloud URLs processing
             boy_photos = payload.get('boy_photos', [])
             for idx, img_b64 in enumerate(boy_photos):
                 if img_b64.startswith('data:image'):
@@ -95,6 +95,8 @@ def create_project():
                     fpath = os.path.join(project_upload_dir, fname)
                     save_b64_file(img_b64, fpath)
                     saved_photos.append(('boy', f"uploads/{slug}/{fname}", idx))
+                elif img_b64.startswith('http') or img_b64.startswith('images/'):
+                    saved_photos.append(('boy', img_b64, idx))
 
             girl_photos = payload.get('girl_photos', [])
             for idx, img_b64 in enumerate(girl_photos):
@@ -104,6 +106,8 @@ def create_project():
                     fpath = os.path.join(project_upload_dir, fname)
                     save_b64_file(img_b64, fpath)
                     saved_photos.append(('girl', f"uploads/{slug}/{fname}", idx))
+                elif img_b64.startswith('http') or img_b64.startswith('images/'):
+                    saved_photos.append(('girl', img_b64, idx))
 
             together_photos = payload.get('together_photos', [])
             for idx, img_b64 in enumerate(together_photos):
@@ -113,6 +117,8 @@ def create_project():
                     fpath = os.path.join(project_upload_dir, fname)
                     save_b64_file(img_b64, fpath)
                     saved_photos.append(('together', f"uploads/{slug}/{fname}", idx))
+                elif img_b64.startswith('http') or img_b64.startswith('images/'):
+                    saved_photos.append(('together', img_b64, idx))
 
         else:
             # Multipart files upload

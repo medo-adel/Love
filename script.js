@@ -459,13 +459,15 @@ async function uploadFileToImgBB(file, apiKey) {
 
 function renderPreviews(storageArray, container) {
   container.innerHTML = '';
+  const apiKey = localStorage.getItem('imgbb_api_key');
   storageArray.forEach((dataUrl, idx) => {
     const isCloud = dataUrl.startsWith('http');
+    const isUploading = !isCloud && dataUrl.startsWith('data:') && apiKey;
     const thumb = document.createElement('div');
     thumb.className = 'preview-thumb';
     thumb.innerHTML = `
       <img src="${dataUrl}" alt="صورة ${idx + 1}">
-      ${isCloud ? '<span class="cloud-synced-pill" title="مرفوعة على السحابة وجاهزة للمشاركة">☁️</span>' : ''}
+      ${isCloud ? '<span class="cloud-synced-pill" title="مرفوعة على السحابة وجاهزة للمشاركة">☁️</span>' : (isUploading ? '<span class="cloud-synced-pill uploading" title="جاري الرفع للسحابة...">⏳</span>' : '')}
       <button class="remove-thumb-btn" type="button" title="حذف الصورة" onclick="removeImage(${idx}, this)">&times;</button>
     `;
     container.appendChild(thumb);
@@ -846,7 +848,15 @@ const captionsLove = [
   "كل ثانية جنبك بتسوى سنين 💍",
   "جمالك يسرق الأنفاس 💕",
   "القلب اللي نبض ليكي وحدك ❤️",
-  "أغلى ما أملك في الوجود 🌟"
+  "أغلى ما أملك في الوجود 🌟",
+  "نور عيني وسر سعادتي 💫",
+  "أنتِ الحلم اللي اتحقق 🕊️",
+  "ملامحكِ راحة لروحي 🌷",
+  "كل يوم بحبكِ أكتر من قبله 💘",
+  "أميرتي وسلطانة قلبي 👑",
+  "ضحكتكِ بترد فيا الروح 🌿",
+  "صدفة عمري وأحلى أقداره 🌙",
+  "معاً حتى المشيب والأبد 💎"
 ];
 
 const captionsFriends = [
@@ -857,7 +867,13 @@ const captionsFriends = [
   "يوم للتاريخ عمره ما يتنسي 📸",
   "السند اللي في الضهر دايماً 🛡️",
   "أحلى لقطة وأصفى قلوب 🌟",
-  "معاً حتى نعجز سوا 🤝"
+  "معاً حتى نعجز سوا 🤝",
+  "أخويا اللي الدنيا ما تجيب زيه 💥",
+  "ضحك من القلب وذكريات ذهب 🥇",
+  "في الضيقة قبل الفرح موجود 🚀",
+  "أجدع راجل في الكون 🦁",
+  "سند ميميلش ولا يتغير ⚓",
+  "عِشرة عمر وأيام ما تتعوضش ☕"
 ];
 
 function buildMemoriesGallery() {
@@ -1188,14 +1204,20 @@ window.openShareModal = function() {
     params.set('theme', state.theme);
     params.set('msg', state.loveLetter);
 
-    // If photos have web URLs or images/ paths, include them!
-    const boyImg = state.boyPhotos.find(p => p.startsWith('http') || p.startsWith('images/')) 
-      || (document.getElementById('boyUrlInput') ? document.getElementById('boyUrlInput').value.trim() : '');
-    const girlImg = state.girlPhotos.find(p => p.startsWith('http') || p.startsWith('images/')) 
-      || (document.getElementById('girlUrlInput') ? document.getElementById('girlUrlInput').value.trim() : '');
+    // If photos have web URLs or images/ paths, include ALL of them!
+    const boyImgs = state.boyPhotos.filter(p => p && (p.startsWith('http') || p.startsWith('images/')));
+    const girlImgs = state.girlPhotos.filter(p => p && (p.startsWith('http') || p.startsWith('images/')));
+    const togetherImgs = state.togetherPhotos.filter(p => p && (p.startsWith('http') || p.startsWith('images/')));
 
-    if (boyImg) params.set('bimg', boyImg);
-    if (girlImg) params.set('gimg', girlImg);
+    const boyUrl = document.getElementById('boyUrlInput') ? document.getElementById('boyUrlInput').value.trim() : '';
+    if (boyUrl && !boyImgs.includes(boyUrl)) boyImgs.unshift(boyUrl);
+
+    const girlUrl = document.getElementById('girlUrlInput') ? document.getElementById('girlUrlInput').value.trim() : '';
+    if (girlUrl && !girlImgs.includes(girlUrl)) girlImgs.unshift(girlUrl);
+
+    if (boyImgs.length > 0) params.set('bimg', boyImgs.join(','));
+    if (girlImgs.length > 0) params.set('gimg', girlImgs.join(','));
+    if (togetherImgs.length > 0) params.set('timg', togetherImgs.join(','));
 
     fullShareUrl = `${currentBase}?${params.toString()}`;
   }
@@ -1326,13 +1348,24 @@ function checkUrlParams() {
   document.getElementById('themeSelect').value = state.theme;
   document.body.className = state.theme;
 
-  // Read images from URL if passed
+  // Read images from URL if passed (support multiple comma-separated URLs)
   if (urlParams.has('bimg')) {
-    state.boyPhotos = [urlParams.get('bimg')];
+    const raw = urlParams.get('bimg');
+    state.boyPhotos = raw.split(',').map(s => s.trim()).filter(Boolean);
   }
   if (urlParams.has('gimg')) {
-    state.girlPhotos = [urlParams.get('gimg')];
+    const raw = urlParams.get('gimg');
+    state.girlPhotos = raw.split(',').map(s => s.trim()).filter(Boolean);
   }
+  if (urlParams.has('timg')) {
+    const raw = urlParams.get('timg');
+    state.togetherPhotos = raw.split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  // Also render previews for studio view if user toggles back
+  renderPreviews(state.boyPhotos, document.getElementById('boyPreviews'));
+  renderPreviews(state.girlPhotos, document.getElementById('girlPreviews'));
+  renderPreviews(state.togetherPhotos, document.getElementById('togetherPreviews'));
 
   populateRomanticExperience();
   document.getElementById('creatorStudio').classList.remove('active-view');
@@ -1437,6 +1470,24 @@ ${cssContent}
         const img = card.querySelector('img').src;
         const cap = card.querySelector('.polaroid-caption').textContent;
         openLightbox(img, cap);
+      });
+    });
+
+    // Mini thumbnails switching in standalone HTML
+    document.querySelectorAll('#boyMiniGallery .mini-thumb').forEach(thumb => {
+      thumb.addEventListener('click', () => {
+        const img = thumb.querySelector('img').src;
+        document.getElementById('boyFeaturedImg').src = img;
+        document.querySelectorAll('#boyMiniGallery .mini-thumb').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+      });
+    });
+    document.querySelectorAll('#girlMiniGallery .mini-thumb').forEach(thumb => {
+      thumb.addEventListener('click', () => {
+        const img = thumb.querySelector('img').src;
+        document.getElementById('girlFeaturedImg').src = img;
+        document.querySelectorAll('#girlMiniGallery .mini-thumb').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
       });
     });
 
